@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local course/project reference docs
+docs/*.pdf
+docs/project_brief.md
+
+# Local data and generated experiment artifacts
+data/raw/
+data/processed/
+outputs/
+runs/
+checkpoints/
+wandb/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
