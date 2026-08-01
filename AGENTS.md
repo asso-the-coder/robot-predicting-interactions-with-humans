@@ -186,7 +186,6 @@ Do not advertise a proposed command as operational until it is implemented and s
 - The safest leakage-prevention group (scenario, participant, recording, trajectory, or combination) depends on identifiers in the release.
 - The rubric's new-data evaluation requirement still needs an exact plan that remains feasible, ethical, and untouched by tuning.
 - Dependencies, supported Python version, configuration format, experiment tracker, and deterministic-computation policy have not been selected.
-- GitHub HTTPS push authentication is currently unavailable on this machine; local commits may remain ahead until credentials are repaired.
 
 ## Next Priorities
 
