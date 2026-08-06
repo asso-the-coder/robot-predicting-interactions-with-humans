@@ -1,0 +1,24 @@
+processed_dir: data/processed/windows/pose_2s
+output_root: outputs
+seed: 360
+device: auto
+model:
+  model_size: 32
+  num_heads: 4
+  num_layers: 2
+  feedforward_size: 64
+  dropout: 0.4
+  max_sequence_length: 32
+training:
+  batch_size: 512
+  epochs: 40
+  learning_rate: 0.0003
+  weight_decay: 0.01
+  gradient_clip_norm: 1.0
+  early_stopping_patience: 8
+  num_workers: 0
+  positive_weight: 5.0
+threshold_selection:
+  minimum: 0.05
+  maximum: 0.95
+  step: 0.01
