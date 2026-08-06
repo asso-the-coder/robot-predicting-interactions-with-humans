@@ -29,6 +29,7 @@ engagement-intent-preprocess = "engagement_intent.data.preprocess:main"
 engagement-intent-stage = "engagement_intent.data.stage:main"
 engagement-intent-train-baseline = "engagement_intent.training.baseline:main"
 engagement-intent-train-lstm = "engagement_intent.training.lstm:main"
+engagement-intent-train-transformer = "engagement_intent.training.transformer:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -20,7 +20,7 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from engagement_intent.evaluation.metrics import binary_metrics, select_f1_threshold
-from engagement_intent.models import LSTMClassifier
+from engagement_intent.models import LSTMClassifier, TransformerClassifier
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -125,9 +125,9 @@ def git_revision() -> str:
         return "unknown"
 
 
-def create_run_dir(output_root: Path) -> tuple[str, Path]:
+def create_run_dir(output_root: Path, model_type: str = "lstm") -> tuple[str, Path]:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    run_id = f"lstm_{timestamp}_{uuid.uuid4().hex[:8]}"
+    run_id = f"{model_type}_{timestamp}_{uuid.uuid4().hex[:8]}"
     run_dir = output_root / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
     return run_id, run_dir
@@ -137,7 +137,32 @@ def parameter_count(model: nn.Module) -> int:
     return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
 
 
-def train_lstm(config: dict[str, Any]) -> Path:
+def build_sequence_model(
+    model_type: str, input_size: int, settings: dict[str, Any]
+) -> nn.Module:
+    """Construct a configured temporal classifier without binding it to a device."""
+    if model_type == "lstm":
+        return LSTMClassifier(
+            input_size=input_size,
+            hidden_size=int(settings["hidden_size"]),
+            num_layers=int(settings["num_layers"]),
+            dropout=float(settings["dropout"]),
+        )
+    if model_type == "transformer":
+        return TransformerClassifier(
+            input_size=input_size,
+            model_size=int(settings["model_size"]),
+            num_heads=int(settings["num_heads"]),
+            num_layers=int(settings["num_layers"]),
+            feedforward_size=int(settings["feedforward_size"]),
+            dropout=float(settings["dropout"]),
+            max_sequence_length=int(settings["max_sequence_length"]),
+        )
+    raise ValueError(f"Unsupported model type: {model_type}")
+
+
+def train_sequence_model(config: dict[str, Any], model_type: str) -> Path:
+    """Train one temporal model and select its checkpoint and threshold on validation F1."""
     seed = int(config["seed"])
     seed_everything(seed)
     device = resolve_device(str(config["device"]))
@@ -164,11 +189,8 @@ def train_lstm(config: dict[str, Any]) -> Path:
         num_workers=int(settings["num_workers"]),
     )
     model_settings = config["model"]
-    model = LSTMClassifier(
-        input_size=train_features.shape[-1],
-        hidden_size=int(model_settings["hidden_size"]),
-        num_layers=int(model_settings["num_layers"]),
-        dropout=float(model_settings["dropout"]),
+    model = build_sequence_model(
+        model_type, input_size=int(train_features.shape[-1]), settings=model_settings
     ).to(device)
     positive_weight_setting = settings["positive_weight"]
     if positive_weight_setting == "auto":
@@ -190,7 +212,7 @@ def train_lstm(config: dict[str, Any]) -> Path:
         float(threshold_config["step"]),
     )
 
-    run_id, run_dir = create_run_dir(Path(config["output_root"]))
+    run_id, run_dir = create_run_dir(Path(config["output_root"]), model_type=model_type)
     best_f1 = -1.0
     best_epoch = 0
     best_threshold = 0.5
@@ -237,6 +259,7 @@ def train_lstm(config: dict[str, Any]) -> Path:
             torch.save(
                 {
                     "model_state_dict": model.state_dict(),
+                    "model_type": model_type,
                     "input_size": int(train_features.shape[-1]),
                     "model_config": model_settings,
                     "selected_threshold": best_threshold,
@@ -256,7 +279,7 @@ def train_lstm(config: dict[str, Any]) -> Path:
     predictions["target"] = validation_targets.astype(np.uint8)
     predictions["probability"] = best_probabilities
     predictions["prediction"] = (best_probabilities >= best_threshold).astype(np.uint8)
-    predictions["model"] = "lstm"
+    predictions["model"] = model_type
     predictions.to_csv(run_dir / "validation_predictions.csv", index=False)
     pd.DataFrame(history).to_csv(run_dir / "learning_curves.csv", index=False)
 
@@ -264,6 +287,8 @@ def train_lstm(config: dict[str, Any]) -> Path:
         "run_id": run_id,
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "code_revision": git_revision(),
+        "model_type": model_type,
+        "model_config": model_settings,
         "processed_dir": str(processed_dir),
         "seed": seed,
         "device": str(device),
@@ -285,10 +310,15 @@ def train_lstm(config: dict[str, Any]) -> Path:
     return run_dir
 
 
+def train_lstm(config: dict[str, Any]) -> Path:
+    return train_sequence_model(config, model_type="lstm")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train the primary LSTM classifier.")
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--processed-dir", type=Path)
+    parser.add_argument("--seed", type=int)
     return parser
 
 
@@ -297,6 +327,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     config = load_config(args.config)
     if args.processed_dir is not None:
         config["processed_dir"] = str(args.processed_dir)
+    if args.seed is not None:
+        config["seed"] = args.seed
     run_dir = train_lstm(config)
     print(run_dir.resolve())
     return 0

@@ -63,6 +63,13 @@ Train the primary LSTM. Checkpoints and thresholds are selected using validation
   --config configs/lstm.yaml
 ```
 
+Train the positional Transformer comparison through the same validation-only selection path:
+
+```powershell
+.\.venv\Scripts\python.exe -m engagement_intent.training.transformer `
+  --config configs/transformer.yaml
+```
+
 After all model, feature, window, checkpoint, and threshold choices are frozen, evaluate the selected baseline and LSTM on the final test split:
 
 ```powershell
