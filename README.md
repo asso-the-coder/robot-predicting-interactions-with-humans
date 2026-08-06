@@ -31,6 +31,17 @@ Stage the release and its nested lobby archives under ignored processed storage.
   --output-dir data/processed/par-d-v1
 ```
 
+Build leakage-safe, normalized temporal windows after staging:
+
+```powershell
+.\.venv\Scripts\python.exe -m engagement_intent.data.preprocess `
+  --config configs/preprocess.yaml `
+  --feature-set orientation `
+  --observation-seconds 2
+```
+
+The verified schema, target semantics, exclusions, and split policy are documented in [`DATA_AUDIT.md`](DATA_AUDIT.md).
+
 Run the current tests:
 
 ```powershell

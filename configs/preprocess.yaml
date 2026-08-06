@@ -1,0 +1,19 @@
+source_root: data/processed/par-d-v1
+output_root: data/processed/windows
+sample_rate_hz: 5
+prediction_horizon_seconds: 4
+observation_seconds: 2
+stride_frames: 1
+max_gap_seconds: 0.31
+feature_set: orientation
+
+# Entire recording days are assigned before windows are constructed. Each
+# split includes both physical lobbies. Test dates remain untouched by model
+# selection and preprocessing statistics.
+validation_dates:
+  - "2022-08-11"
+  - "2022-08-18"
+test_dates:
+  - "2022-08-08"
+  - "2022-08-23"
+

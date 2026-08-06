@@ -24,6 +24,7 @@ dev = ["pytest>=8,<9"]
 
 [project.scripts]
 engagement-intent-inspect = "engagement_intent.data.inspect:main"
+engagement-intent-preprocess = "engagement_intent.data.preprocess:main"
 engagement-intent-stage = "engagement_intent.data.stage:main"
 
 [tool.setuptools]
