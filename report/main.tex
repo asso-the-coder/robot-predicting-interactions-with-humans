@@ -1,5 +1,7 @@
 \documentclass[final]{article}
 
+\PassOptionsToPackage{numbers,sort&compress}{natbib}
+
 \usepackage{APS360}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -33,7 +35,7 @@
 
 \section*{Introduction}
 
-A public-facing robot must decide whether a nearby person is approaching to interact or simply passing through its field of view. Acting too early can interrupt a passerby, while acting too late can make the robot appear unresponsive. This project treats early engagement prediction as supervised binary classification. Given a short robot-centric sequence observed before engagement begins, the system predicts whether that person will interact within four seconds. Machine learning is appropriate because intent is not identified by one measurement. It is expressed through a temporal combination of distance, speed, direction, body orientation, and pose. The practical scope is deliberately low risk: the prediction could support greeting, waiting, or avoiding an interruption, but not surveillance or consequential decisions.
+My motivation for this project arose from my current \href{https://drive.google.com/file/d/1Sqb0hDDnlDuVB5g78kB9woW4czeqSbG5/view?usp=sharing}{summer research on humanoid robotics}. Although my work there focuses on audio models and conversation, I noticed that a robot must first recognize whether a nearby person intends to engage before a conversation can begin naturally. This is difficult in public spaces: people approach, pause, look around, or pass by in varied ways, so fixed hand-crafted rules may be brittle in unfamiliar, noisy environments. This project therefore treats early engagement prediction as supervised binary classification. Given a short robot-centric sequence observed before engagement begins, the model predicts whether that person will interact within the next four seconds. Machine learning is appropriate because intent is not revealed by one measurement; it must be inferred from temporal combinations of distance, speed, direction, body orientation, and pose. A reliable prediction could help a public-facing robot greet an interested person promptly while avoiding unwanted interruptions. The practical scope is deliberately low risk and excludes surveillance or consequential decisions.
 
 \section*{Illustration}
 
@@ -65,7 +67,7 @@ PAR-D defines the closest prior task and contributes public-robot interaction tr
 
 \section*{Data Processing}
 
-The CC0 PAR-D Shutter release contains 1,059 scenario CSV files from two university lobbies, sampled at 5 Hz \citep{thompson2024pard}. Auditing found 139,092 rows, 337 columns, and 2,429 unique $(\mathrm{lobby},\mathrm{scenario},\mathrm{person})$ tracks over 13 recording dates. A target is positive when the released time-to-engagement field is in $[0,4]$ seconds at the final observation. Any window containing current engagement is rejected. Label-construction fields, button events, robot actions, speech, and future-state columns are excluded.
+The CC0 PAR-D Shutter release contains 1,059 scenario CSV files from two university lobbies, sampled at 5 Hz \citep{thompson2024pard}. Auditing found 139,092 rows, 337 columns, and 2,429 unique $(\mathrm{lobby},\mathrm{scenario},\mathrm{person})$ tracks over 13 recording dates. We adopt PAR-D's released four-second prediction horizon: the authors chose this cutoff based on prior evidence that engagement can be detected approximately three to four seconds before it begins \citep{thompson2024pard,bohus2009engagement}. Thus, a target is positive when the released time-to-engagement field is in $[0,4]$ seconds at the final observation. This horizon offers potential response time but is not evidence that four seconds gives higher user satisfaction than three. Any window containing current engagement is rejected. Label-construction fields, button events, robot actions, speech, and future-state columns are excluded.
 
 Dates are assigned before windows are constructed: nine dates for training, August 11 and 18 for validation, and August 8 and 23 for final test. This prevents overlapping frames from the same collection day entering multiple splits. Two-second windows contain 10 contiguous frames; gaps above 0.31 seconds are rejected. Missing velocity at the first track sample is imputed, and every numeric feature is standardized using training data statistics only. The resulting 50,157 windows are strongly imbalanced (5.0\% positive).
 
