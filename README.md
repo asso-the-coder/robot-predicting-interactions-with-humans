@@ -4,7 +4,7 @@ This APS360 project studies supervised binary classification of pedestrian inten
 
 ## Current status
 
-The project is in the data-audit stage. The primary source is the CC0-licensed [PAR-D Shutter Interaction Dataset](https://doi.org/10.60600/YU/KFFQPF). Raw data must remain unchanged and must not be committed.
+The data audit, leakage-safe preprocessing, baseline models, LSTM, positional Transformer, feature/window ablations, and one frozen held-out evaluation are implemented. The primary source is the CC0-licensed [PAR-D Shutter Interaction Dataset](https://doi.org/10.60600/YU/KFFQPF). Raw data must remain unchanged and must not be committed.
 
 ## Local setup
 
@@ -84,4 +84,4 @@ Run the current tests:
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Training and evaluation commands will be documented only after the real dataset schema and label semantics have been audited.
+Generated datasets, checkpoints, predictions, and plots remain ignored. Each run records its complete configuration, code revision, device, selected checkpoint, threshold, and validation metrics.

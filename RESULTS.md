@@ -20,6 +20,22 @@ All entries below use a two-second observation window and the same recording-day
 
 The richer pose representation improved validation F1 only for the nonlinear sequence model. It hurt logistic regression, suggesting that the benefit was not simply caused by adding more coordinates.
 
+## Multi-seed neural-model stability
+
+After the original model comparison, the selected pose LSTM and a positional pose Transformer were each trained with seeds 360, 361, and 362. Values are validation mean plus or minus sample standard deviation. The deterministic orientation logistic baseline is included for context.
+
+| Model | Parameters | Accuracy | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Orientation logistic regression | 49 coefficients | 0.917 | 0.232 | 0.366 | **0.284** |
+| Pose LSTM | 58,689 | 0.912 +/- 0.028 | 0.229 +/- 0.072 | 0.359 +/- 0.096 | 0.273 +/- 0.063 |
+| Pose Transformer | 69,505 | 0.909 +/- 0.020 | 0.220 +/- 0.034 | 0.375 +/- 0.051 | 0.274 +/- 0.016 |
+
+The Transformer projects each pose vector to 64 dimensions, prepends a learned classification token, adds sinusoidal temporal positions, and applies two four-head pre-normalized encoder layers with 128-dimensional GELU feed-forward blocks. It was substantially more stable than the LSTM, but neither neural architecture beat logistic regression on mean validation F1. The original seed-360 LSTM result was therefore unusually favorable rather than representative.
+
+A smaller regularized Transformer sensitivity run (18,369 parameters, dropout 0.4, weight decay 0.01, and positive loss weight 5.0) reached validation F1 0.259, below the main Transformer's seed-360 F1 of 0.286. Increasing regularization did not recover the LSTM's best-seed result.
+
+These stability and Transformer experiments were added after the frozen test results had already been inspected. They were therefore evaluated on validation only; no Transformer test metric is reported, and the test split was not reopened.
+
 ## Validation observation-length comparison
 
 The selected centered-pose LSTM was compared at the planned early-observation lengths.
@@ -70,8 +86,10 @@ The complete ignored artifact directory is `outputs/final_evaluation_20260806T15
 
 - Best validation logistic run: `baseline_20260806T144151Z_8449420c`.
 - Selected LSTM run: `lstm_20260806T145923Z_e770e3a7`.
+- Additional LSTM seed runs: `lstm_20260806T152603Z_0eda47cc`, `lstm_20260806T152638Z_5080bb0e`.
+- Transformer seed runs: `transformer_20260806T152218Z_0bf05b3e`, `transformer_20260806T152710Z_21649362`, `transformer_20260806T152822Z_14c26c9b`.
+- Regularized Transformer sensitivity run: `transformer_20260806T152443Z_311ff0b7`.
 - Frozen final evaluation: `final_evaluation_20260806T150542Z_9933a63f`.
 - Final evaluator code revision: `f6d0816`.
 
 Generated run directories remain ignored because they contain large checkpoints and prediction files. The small reviewed summary in this document is tracked intentionally.
-
