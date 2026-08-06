@@ -23,11 +23,16 @@
   urlcolor=blue
 }
 
+\makeatletter
+\renewcommand{\@notice}{}
+\makeatother
+
 \definecolor{motionblue}{HTML}{D9EAF7}
 \definecolor{modelgreen}{HTML}{DCEED1}
 \definecolor{outputorange}{HTML}{FCE2C4}
 
-\title{Early Prediction of Human Engagement Intent for Social Robot Interaction}
+\title{Early Prediction of Human Engagement Intent for Social Robot Interaction\\[0.35em]
+  \large\mdseries APS360 Final Report}
 
 \author{%
   Asser Abdelgawad \\
@@ -47,7 +52,7 @@ My motivation for this project arose from my current \href{https://drive.google.
 
 \section*{Illustration}
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
   \centering
   \begin{tikzpicture}[
     node distance=2.8mm,
@@ -79,7 +84,7 @@ The CC0 PAR-D Shutter release contains 1,059 scenario CSV files from two univers
 
 Dates are assigned before windows are constructed: nine dates for training, August 11 and 18 for validation, and August 8 and 23 for final test. This prevents overlapping frames from the same collection day entering multiple splits. Two-second windows contain 10 contiguous frames; gaps above 0.31 seconds are rejected. Missing velocity at the first track sample is imputed, and every numeric feature is standardized using training data statistics only. The resulting 50,157 windows are strongly imbalanced (5.0\% positive).
 
-\begin{table}[!h]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Processed two-second windows.}
@@ -97,7 +102,7 @@ Dates are assigned before windows are constructed: nine dates for training, Augu
 
 Three nested feature sets support an ablation: motion (6 features), orientation (12), and centered pose (33). Pose adds pelvis-centered head, shoulder, wrist, and ankle coordinates. Centering removes lobby-specific global offsets. Table~\ref{tab:example} shows three frames from an actual de-identified positive pose window; the model receives all 10 frames and 33 features. The true output is $y=1$, meaning engagement begins within four seconds.
 
-\begin{table}[!h]
+\begin{table}[!ht]
   \centering
   \scriptsize
   \caption{Subset of one actual input sequence, before standardization.}
@@ -127,7 +132,7 @@ At seed 360, the pose LSTM gave the best validation F1, 0.345, compared with 0.2
 
 The model, features, two-second window, checkpoint, and threshold were frozen before reading the test dates. Table~\ref{tab:test} shows that the LSTM validation advantage did not transfer. Accuracy is included but is not the main measure: always predicting negative obtains 91.4\% test accuracy and zero positive-class F1.
 
-\begin{table}[!h]
+\begin{table}[!ht]
   \centering
   \small
   \caption{Final unseen-date test results. Thresholds were selected on validation F1.}
@@ -144,7 +149,7 @@ The model, features, two-second window, checkpoint, and threshold were frozen be
 
 After this frozen test evaluation, seeds 361 and 362 and the Transformer comparison were run on validation only; the test split was not reopened. Across seeds 360--362, LSTM validation F1 was $0.273\pm0.063$ and Transformer F1 was $0.274\pm0.016$ (sample standard deviation). The Transformer was more stable, but neither neural model exceeded the deterministic logistic result of 0.284 on average. A smaller, more regularized Transformer reached only 0.259 F1.
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
   \centering
   \includegraphics[width=0.86\linewidth]{figures/lstm_learning_curves.png}
   \caption{Selected LSTM training. Training loss falls while validation loss rises, showing rapid overfitting. The checkpoint is selected by validation F1, not final-epoch loss.}
@@ -157,7 +162,7 @@ For the new-data evaluation, the 5,587 test windows come from two recording date
 
 Four LSTM outputs were selected deterministically, one per confusion-matrix category (Table~\ref{tab:examples}). The matched approach-and-stop true and false positives show why proximity or stopping alone is insufficient, while the nearly stationary positive and negative show that some labels are ambiguous from two seconds of behavior.
 
-\begin{table}[!h]
+\begin{table}[!ht]
   \centering
   \scriptsize
   \caption{Representative held-out LSTM outputs; $y$ is the true label and $p$ is predicted interaction probability.}
