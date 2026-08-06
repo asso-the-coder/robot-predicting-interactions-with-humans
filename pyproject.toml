@@ -26,6 +26,7 @@ dev = ["pytest>=8,<9"]
 engagement-intent-inspect = "engagement_intent.data.inspect:main"
 engagement-intent-preprocess = "engagement_intent.data.preprocess:main"
 engagement-intent-stage = "engagement_intent.data.stage:main"
+engagement-intent-train-baseline = "engagement_intent.training.baseline:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -42,6 +42,13 @@ Build leakage-safe, normalized temporal windows after staging:
 
 The verified schema, target semantics, exclusions, and split policy are documented in [`DATA_AUDIT.md`](DATA_AUDIT.md).
 
+Train the majority-class and logistic-regression baselines. This command selects a logistic-regression decision threshold using validation F1 and does not read the test split:
+
+```powershell
+.\.venv\Scripts\python.exe -m engagement_intent.training.baseline `
+  --config configs/baseline.yaml
+```
+
 Run the current tests:
 
 ```powershell

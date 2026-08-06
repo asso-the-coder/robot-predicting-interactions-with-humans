@@ -1,0 +1,12 @@
+processed_dir: data/processed/windows/orientation_2s
+output_root: outputs
+seed: 360
+logistic_regression:
+  class_weight: balanced
+  max_iter: 1000
+  regularization_c: 1.0
+threshold_selection:
+  minimum: 0.05
+  maximum: 0.95
+  step: 0.01
+
