@@ -6,6 +6,8 @@ __pycache__/
 # Local course/project reference docs
 docs/*.pdf
 docs/project_brief.md
+docs/*.tex
+docs/*.sty
 
 # Local data and generated experiment artifacts
 data/raw/
