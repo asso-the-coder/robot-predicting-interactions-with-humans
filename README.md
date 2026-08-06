@@ -23,6 +23,14 @@ Place the original PAR-D download under `data/raw/par-d/`. Inventory it without 
   --output data/processed/raw_inventory.json
 ```
 
+Stage the release and its nested lobby archives under ignored processed storage. The command refuses to overwrite a non-empty destination:
+
+```powershell
+.\.venv\Scripts\python.exe -m engagement_intent.data.stage `
+  --archive data/raw/par-d/DOWNLOADED_ARCHIVE.zip `
+  --output-dir data/processed/par-d-v1
+```
+
 Run the current tests:
 
 ```powershell
