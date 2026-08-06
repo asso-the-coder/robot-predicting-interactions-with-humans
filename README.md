@@ -47,7 +47,7 @@ Build leakage-safe, normalized temporal windows after staging:
   --observation-seconds 2
 ```
 
-The verified schema, target semantics, exclusions, and split policy are documented in [`DATA_AUDIT.md`](DATA_AUDIT.md).
+The verified schema, target semantics, exclusions, and split policy are documented in [`DATA_AUDIT.md`](DATA_AUDIT.md). Reviewed validation and final test results are recorded in [`RESULTS.md`](RESULTS.md).
 
 Train the majority-class and logistic-regression baselines. This command selects a logistic-regression decision threshold using validation F1 and does not read the test split:
 
