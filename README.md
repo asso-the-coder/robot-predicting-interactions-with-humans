@@ -15,6 +15,13 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
+On an NVIDIA system compatible with CUDA 11.8, replace the default CPU wheel with the official CUDA build:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --force-reinstall --no-deps `
+  torch==2.5.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+```
+
 Place the original PAR-D download under `data/raw/par-d/`. Inventory it without extracting or modifying the archive:
 
 ```powershell
@@ -47,6 +54,13 @@ Train the majority-class and logistic-regression baselines. This command selects
 ```powershell
 .\.venv\Scripts\python.exe -m engagement_intent.training.baseline `
   --config configs/baseline.yaml
+```
+
+Train the primary LSTM. Checkpoints and thresholds are selected using validation F1; the test split is not read:
+
+```powershell
+.\.venv\Scripts\python.exe -m engagement_intent.training.lstm `
+  --config configs/lstm.yaml
 ```
 
 Run the current tests:

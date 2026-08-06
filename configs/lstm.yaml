@@ -1,0 +1,22 @@
+processed_dir: data/processed/windows/orientation_2s
+output_root: outputs
+seed: 360
+device: auto
+model:
+  hidden_size: 64
+  num_layers: 2
+  dropout: 0.2
+training:
+  batch_size: 512
+  epochs: 25
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  early_stopping_patience: 5
+  num_workers: 0
+  positive_weight: auto
+threshold_selection:
+  minimum: 0.05
+  maximum: 0.95
+  step: 0.01
+
