@@ -155,16 +155,19 @@ def train_baselines(config: dict[str, Any]) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train validation-selected baseline models.")
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--processed-dir", type=Path)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    run_dir = train_baselines(load_config(args.config))
+    config = load_config(args.config)
+    if args.processed_dir is not None:
+        config["processed_dir"] = str(args.processed_dir)
+    run_dir = train_baselines(config)
     print(run_dir.resolve())
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

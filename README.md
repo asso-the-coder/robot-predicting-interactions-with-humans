@@ -63,6 +63,14 @@ Train the primary LSTM. Checkpoints and thresholds are selected using validation
   --config configs/lstm.yaml
 ```
 
+After all model, feature, window, checkpoint, and threshold choices are frozen, evaluate the selected baseline and LSTM on the final test split:
+
+```powershell
+.\.venv\Scripts\python.exe -m engagement_intent.evaluation.final `
+  --baseline-run outputs/BASELINE_RUN_ID `
+  --lstm-run outputs/LSTM_RUN_ID
+```
+
 Run the current tests:
 
 ```powershell
