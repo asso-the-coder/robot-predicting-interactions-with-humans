@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "engagement-intent"
+version = "0.1.0"
+description = "Early prediction of pedestrian engagement intent for social robots."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.8,<4",
+    "numpy>=1.26,<3",
+    "pandas>=2.2,<3",
+    "PyYAML>=6,<7",
+    "scikit-learn>=1.4,<2",
+    # Newer Windows wheels contain license paths that exceed this repository's
+    # absolute path limit. PyTorch 2.5.1 supports Python 3.12 and the APIs used here.
+    "torch==2.5.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[project.scripts]
+engagement-intent-inspect = "engagement_intent.data.inspect:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
