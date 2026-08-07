@@ -10,21 +10,27 @@
 
 ## Repository Map
 
-Current tracked files:
+Current tracked project material:
 
-- `README.md`: minimal project title and one-line description; it does not yet document setup or usage.
-- `.gitignore`: excludes the local virtual environment, course documents, raw/processed data, checkpoints, run outputs, caches, and editor files.
-- `AGENTS.md`: this contributor guide.
+- `README.md`: setup, commands, results summary, and repository guide.
+- `DATA_AUDIT.md`: verified PAR-D schema, target semantics, split policy, feature sets, and limitations.
+- `RESULTS.md`: reviewed validation and frozen test results with run identifiers.
+- `pyproject.toml`: package metadata, dependencies, command entry points, and pytest configuration.
+- `configs/`: tracked preprocessing, baseline, LSTM, and Transformer configurations.
+- `src/engagement_intent/`: data staging/preprocessing, models, training, metrics, and final evaluation.
+- `tests/`: 24 tests covering data logic, models, metrics, and final evaluation.
+- `report/`: tracked LaTeX source, bibliography, style, and figures.
+- `.gitignore`: excludes environments, course documents, raw/processed data, checkpoints, generated outputs, caches, and report build products.
 
 Current local-only files and directories:
 
 - `docs/`: ignored PDFs containing the syllabus, rubrics, guidelines, examples, and annotated proposal, plus an ignored `project_brief.md`. Use these as requirements; do not stage or push them.
 - `.venv/`: ignored local environment. It is not a reproducible dependency specification.
-- `.agents/`: currently empty and untracked.
+- `data/`: ignored immutable raw data and reproducibly generated processed windows.
+- `outputs/`: ignored checkpoints, predictions, metrics, and plots from completed runs.
+- `.agents/`: local agent state.
 
-No notebooks, Python packages, configuration files, dependency manifests, data scripts, training scripts, evaluation scripts, tests, datasets, or experiment outputs exist yet.
-
-Proposed structure (create incrementally, not all at once):
+Implemented structure:
 
 ```text
 configs/                         # Tracked experiment and preprocessing configs
@@ -34,11 +40,10 @@ src/engagement_intent/
   training/                      # Training loops and checkpoint selection
   evaluation/                    # Metrics, predictions, and plots
 tests/                           # Fast unit and smoke tests
-notebooks/                       # Optional exploration; no hidden core logic
 data/raw/                        # Immutable local PAR-D release; ignored
 data/processed/                  # Reproducible derived artifacts; ignored
 outputs/                         # Unique experiment directories; ignored
-report/                          # Tracked LaTeX source and bibliography when started
+report/                          # Tracked LaTeX source, bibliography, and figures
 ```
 
 ## Intended System Architecture
@@ -117,7 +122,7 @@ report/                          # Tracked LaTeX source and bibliography when st
 
 ## Testing and Validation
 
-No test framework or test commands currently exist. Add lightweight tests as each component appears:
+A 24-test pytest suite is implemented. Maintain it and extend the following coverage as components evolve:
 
 - Parse real filenames/identifiers and reject malformed cases.
 - Verify grouped splitting is deterministic and has zero group overlap.
@@ -131,23 +136,22 @@ No test framework or test commands currently exist. Add lightweight tests as eac
 
 ## Commands
 
-There are currently no reproducible project commands: no dependency file, package, CLI, preprocessing entry point, trainer, evaluator, plot generator, or test suite has been implemented. The existing `.venv/` is local-only and must not be treated as setup documentation.
-
-The following are **proposed examples, not working commands**. Implement and update them as the package is created:
+The following commands are implemented and smoke-tested. See `README.md` for complete arguments and sequencing:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m engagement_intent.data.inspect --data-dir data/raw
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m engagement_intent.data.inspect --data-dir data/raw/par-d
+.\.venv\Scripts\python.exe -m engagement_intent.data.stage --archive data/raw/par-d/doi-10.60600-yu-kffqpf.zip --output-dir data/processed/par-d-v1
 .\.venv\Scripts\python.exe -m engagement_intent.data.preprocess --config configs/preprocess.yaml
 .\.venv\Scripts\python.exe -m engagement_intent.training.baseline --config configs/baseline.yaml
 .\.venv\Scripts\python.exe -m engagement_intent.training.lstm --config configs/lstm.yaml
-.\.venv\Scripts\python.exe -m engagement_intent.evaluation.evaluate --config configs/evaluate.yaml --checkpoint checkpoints/model.pt
-.\.venv\Scripts\python.exe -m engagement_intent.evaluation.plots --run-dir outputs/RUN_ID
+.\.venv\Scripts\python.exe -m engagement_intent.training.transformer --config configs/transformer.yaml
+.\.venv\Scripts\python.exe -m engagement_intent.evaluation.final --baseline-run outputs/BASELINE_RUN_ID --lstm-run outputs/LSTM_RUN_ID
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Do not advertise a proposed command as operational until it is implemented and smoke-tested.
+Generated artifacts remain ignored; reviewed metrics are recorded in `RESULTS.md`.
 
 ## Agent Workflow
 
@@ -178,19 +182,16 @@ Do not advertise a proposed command as operational until it is implemented and s
 - Keep an experiment trail sufficient to support every table, figure, and claim in the report.
 - Never fabricate outputs, metrics, experiments, dataset properties, citations, or qualitative examples.
 
-## Known Uncertainties
+## Known Limitations
 
-- The PAR-D release is not present, so its actual schema, formats, labels, feature modalities, sampling rate, coordinate system, grouping identifiers, license, and missing-data patterns are unverified.
-- The precise positive-label definition and prediction anchor are not yet established from actual annotations. "First 1/2/3 seconds" must be reconciled with what information is available at inference time.
-- It is unknown whether PAR-D directly provides head/body orientation and pose or whether those features must be derived. Do not promise unavailable modalities.
-- The safest leakage-prevention group (scenario, participant, recording, trajectory, or combination) depends on identifiers in the release.
-- The rubric's new-data evaluation requirement still needs an exact plan that remains feasible, ethical, and untouched by tuning.
-- Dependencies, supported Python version, configuration format, experiment tracker, and deterministic-computation policy have not been selected.
+- The final test contains unseen recording dates from the same two lobbies, not independently collected data from a third location.
+- Future engagement behavior is an imperfect proxy for internal intent, and positives represent only about 5% of all two-second windows.
+- Overlapping windows are correlated within a recording date even though date-level splitting prevents cross-split overlap.
+- Skeleton and orientation signals contain Kinect tracking noise and occlusion; the release does not contain camera photographs or video frames of people.
+- The Transformer was added after the frozen test evaluation and therefore has validation-only results. The test split must not be reopened for it.
 
 ## Next Priorities
 
-1. Obtain and audit PAR-D, then document its license, schema, label semantics, grouping keys, class balance, missingness, sampling, and concrete de-identified input/output examples.
-2. Scaffold the Python package, dependency manifest, typed configuration format, README setup instructions, and a fast test suite.
-3. Implement deterministic grouped splitting and temporal-window preprocessing with leakage, normalization, and serialization tests.
-4. Implement majority-class and logistic-regression baselines with the shared evaluation pipeline.
-5. Implement and smoke-test the configurable LSTM, then run early-window and feature-ablation experiments before deciding whether the Transformer adds useful scope.
+1. Keep the frozen test split closed; do not add post-hoc test comparisons.
+2. Preserve the reviewed metrics and report claims exactly as supported by saved artifacts.
+3. For future work, collect an independent location, add positive tracks, evaluate at track level, and study probability calibration across dates.

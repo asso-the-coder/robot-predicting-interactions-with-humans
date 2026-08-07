@@ -6,6 +6,26 @@ This APS360 project studies supervised binary classification of pedestrian inten
 
 The data audit, leakage-safe preprocessing, baseline models, LSTM, positional Transformer, feature/window ablations, and one frozen held-out evaluation are implemented. The primary source is the CC0-licensed [PAR-D Shutter Interaction Dataset](https://doi.org/10.60600/YU/KFFQPF). Raw data must remain unchanged and must not be committed.
 
+## Results at a glance
+
+The positive label means that a pedestrian begins interacting within four seconds after a two-second observation window. Positive-class F1 is the primary metric because only 5% of all processed windows are positive; an always-negative predictor still obtains 91.4% test accuracy but zero F1.
+
+| Selected model | Held-out accuracy | Precision | Recall | Positive-class F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Orientation logistic regression | 0.861 | 0.239 | 0.284 | **0.260** |
+| Centered-pose LSTM | 0.862 | 0.115 | 0.092 | 0.102 |
+
+The Transformer was added only after the frozen test evaluation and was evaluated on validation data only. The complete reviewed results, chronology, and run identifiers are in [`RESULTS.md`](RESULTS.md).
+
+## Repository layout
+
+- `configs/`: preprocessing and experiment configurations.
+- `src/engagement_intent/`: data inspection/staging, preprocessing, models, training, and final evaluation.
+- `tests/`: unit and smoke tests for data handling, models, metrics, and evaluation.
+- `DATA_AUDIT.md`: verified dataset schema, target semantics, leakage controls, and limitations.
+- `RESULTS.md`: reviewed validation and frozen test results.
+- `report/`: LaTeX report source, bibliography, figures, and build instructions.
+
 ## Local setup
 
 Create a virtual environment and install the package with development dependencies:
@@ -34,7 +54,7 @@ Stage the release and its nested lobby archives under ignored processed storage.
 
 ```powershell
 .\.venv\Scripts\python.exe -m engagement_intent.data.stage `
-  --archive data/raw/par-d/DOWNLOADED_ARCHIVE.zip `
+  --archive data/raw/par-d/doi-10.60600-yu-kffqpf.zip `
   --output-dir data/processed/par-d-v1
 ```
 
@@ -85,3 +105,7 @@ Run the current tests:
 ```
 
 Generated datasets, checkpoints, predictions, and plots remain ignored. Each run records its complete configuration, code revision, device, selected checkpoint, threshold, and validation metrics.
+
+## Final report
+
+The tracked report source is [`report/main.tex`](report/main.tex), with build instructions in [`report/README.md`](report/README.md). The generated PDF is intentionally ignored and submitted separately through the course submission system.
