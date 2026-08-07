@@ -65,24 +65,20 @@ My motivation for this project arose from my current \href{https://drive.google.
   \begin{tikzpicture}[
     node distance=2.8mm,
     box/.style={draw, rounded corners=1.5pt, align=center, minimum height=9mm,
-      font=\scriptsize},
+      text width=2.15cm, font=\scriptsize},
     arrow/.style={-{Latex[length=2mm]}, thick}
   ]
-    \node[box, fill=motionblue, text width=3.05cm] (examples)
-      {Actual held-out inputs\\
-       $y{=}1$: distance $0.87\!\to\!0.58$ m\\
-       $y{=}0$: distance $0.53\!\to\!0.54$ m};
-    \node[box, fill=motionblue, text width=2.55cm, right=of examples] (window)
-      {Observed for 2 s\\10 numerical frames\\motion + orientation + pose};
-    \node[box, fill=modelgreen, text width=2.25cm, right=of window] (model)
-      {Main architecture\\2-layer pose LSTM};
-    \node[box, fill=outputorange, text width=2.15cm, right=of model] (out)
-      {$P(\mathrm{interact})$\\in the next 4 s\\greet or wait};
-    \draw[arrow] (examples) -- (window);
+    \node[box, fill=motionblue] (raw) {PAR-D\\5 Hz tracks};
+    \node[box, fill=motionblue, right=of raw] (prep) {date split, clean, normalize};
+    \node[box, fill=motionblue, right=of prep] (window) {$10\!\times\!33$\\pose window};
+    \node[box, fill=modelgreen, right=of window] (model) {LSTM or\\Transformer};
+    \node[box, fill=outputorange, right=of model] (out) {$P(\mathrm{interact})$\\within 4 s};
+    \draw[arrow] (raw) -- (prep);
+    \draw[arrow] (prep) -- (window);
     \draw[arrow] (window) -- (model);
     \draw[arrow] (model) -- (out);
   \end{tikzpicture}
-  \caption{Core task and main architecture. Two actual held-out 10-frame numerical sequences enter the pose LSTM, which predicts engagement during the following four seconds. Their true labels are shown only for illustration, not given to the model.}
+  \caption{The model observes a fixed pre-engagement sequence. Recording dates are separated before overlapping windows are formed, preventing adjacent observations from crossing splits.}
   \label{fig:pipeline}
 \end{figure}
 
