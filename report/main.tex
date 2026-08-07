@@ -42,9 +42,17 @@
 }
 
 \begin{document}
+\raggedbottom
 
 \maketitle
 \vspace{-0.45in}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=0.62\linewidth,trim=0 145 0 145,clip]{figures/Intention_Classification.png}
+  \caption{Can a robot determine if this is a non-engaging passerby or a would-be interlocutor?}
+  \label{fig:intention}
+\end{figure}
 
 \section*{Introduction}
 
@@ -57,20 +65,24 @@ My motivation for this project arose from my current \href{https://drive.google.
   \begin{tikzpicture}[
     node distance=2.8mm,
     box/.style={draw, rounded corners=1.5pt, align=center, minimum height=9mm,
-      text width=2.15cm, font=\scriptsize},
+      font=\scriptsize},
     arrow/.style={-{Latex[length=2mm]}, thick}
   ]
-    \node[box, fill=motionblue] (raw) {PAR-D\\5 Hz tracks};
-    \node[box, fill=motionblue, right=of raw] (prep) {date split, clean, normalize};
-    \node[box, fill=motionblue, right=of prep] (window) {$10\!\times\!33$\\pose window};
-    \node[box, fill=modelgreen, right=of window] (model) {LSTM or\\Transformer};
-    \node[box, fill=outputorange, right=of model] (out) {$P(\mathrm{interact})$\\within 4 s};
-    \draw[arrow] (raw) -- (prep);
-    \draw[arrow] (prep) -- (window);
+    \node[box, fill=motionblue, text width=3.05cm] (examples)
+      {Actual held-out inputs\\
+       $y{=}1$: distance $0.87\!\to\!0.58$ m\\
+       $y{=}0$: distance $0.53\!\to\!0.54$ m};
+    \node[box, fill=motionblue, text width=2.55cm, right=of examples] (window)
+      {Observed for 2 s\\10 numerical frames\\motion + orientation + pose};
+    \node[box, fill=modelgreen, text width=2.25cm, right=of window] (model)
+      {Main architecture\\2-layer pose LSTM};
+    \node[box, fill=outputorange, text width=2.15cm, right=of model] (out)
+      {$P(\mathrm{interact})$\\in the next 4 s\\greet or wait};
+    \draw[arrow] (examples) -- (window);
     \draw[arrow] (window) -- (model);
     \draw[arrow] (model) -- (out);
   \end{tikzpicture}
-  \caption{The model observes a fixed pre-engagement sequence. Recording dates are separated before overlapping windows are formed, preventing adjacent observations from crossing splits.}
+  \caption{Core task and main architecture. Two actual held-out 10-frame numerical sequences enter the pose LSTM, which predicts engagement during the following four seconds. Their true labels are shown only for illustration, not given to the model.}
   \label{fig:pipeline}
 \end{figure}
 
@@ -80,7 +92,7 @@ PAR-D defines the closest prior task and contributes public-robot interaction tr
 
 \section*{Data Processing}
 
-The CC0 PAR-D Shutter release contains 1,059 scenario CSV files from two university lobbies, sampled at 5 Hz \citep{thompson2024pard}. Auditing found 139,092 rows, 337 columns, and 2,429 unique $(\mathrm{lobby},\mathrm{scenario},\mathrm{person})$ tracks over 13 recording dates. We adopt PAR-D's released four-second prediction horizon: the authors chose this cutoff based on prior evidence that engagement can be detected approximately three to four seconds before it begins \citep{thompson2024pard,bohus2009engagement}. Thus, a target is positive when the released time-to-engagement field is in $[0,4]$ seconds at the final observation. This horizon offers potential response time but is not evidence that four seconds gives higher user satisfaction than three. Any window containing current engagement is rejected. Label-construction fields, button events, robot actions, speech, and future-state columns are excluded.
+The CC0 PAR-D Shutter release contains 1,059 scenario CSV files from two university lobbies, sampled at 5 Hz \citep{thompson2024pard}. The downloaded release contains no camera photographs or video frames of people: each model input is a numerical time series of robot-relative distance, pedestrian velocity, movement direction, head and body orientation, and 3D skeleton-joint coordinates. Auditing found 139,092 rows, 337 columns, and 2,429 unique $(\mathrm{lobby},\mathrm{scenario},\mathrm{person})$ tracks over 13 recording dates. We adopt PAR-D's released four-second prediction horizon: the authors chose this cutoff based on prior evidence that engagement can be detected approximately three to four seconds before it begins \citep{thompson2024pard,bohus2009engagement}. Thus, a target is positive when the released time-to-engagement field is in $[0,4]$ seconds at the final observation. This horizon offers potential response time but is not evidence that four seconds gives higher user satisfaction than three. Any window containing current engagement is rejected. Label-construction fields, button events, robot actions, speech, and future-state columns are excluded.
 
 Dates are assigned before windows are constructed: nine dates for training, August 11 and 18 for validation, and August 8 and 23 for final test. This prevents overlapping frames from the same collection day entering multiple splits. Two-second windows contain 10 contiguous frames; gaps above 0.31 seconds are rejected. Missing velocity at the first track sample is imputed, and every numeric feature is standardized using training data statistics only. The resulting 50,157 windows are strongly imbalanced (5.0\% positive).
 
@@ -118,13 +130,15 @@ Three nested feature sets support an ablation: motion (6 features), orientation 
   \end{tabular}
 \end{table}
 
-\section*{Architecture and Baseline}
+\section*{Main Architecture and Baseline}
 
-The primary model is a two-layer LSTM with 64 hidden units per layer and dropout 0.2. The last-layer hidden state passes through dropout and a linear head to produce one raw logit. It has 58,689 trainable parameters for pose input. The comparison Transformer projects each 33-dimensional frame to 64 dimensions, prepends a learned classification token, and adds sinusoidal positions. Two pre-normalized encoder layers each use four attention heads, a 128-dimensional GELU feed-forward block, and dropout 0.25. A normalized classification-token embedding produces the logit. It has 69,505 parameters.
+\textbf{Main architecture.} The main architecture is a two-layer LSTM with 64 hidden units per layer and dropout 0.2. The last-layer hidden state passes through dropout and a linear head to produce one raw logit. It has 58,689 trainable parameters for pose input.
+
+The Transformer is neither the main architecture nor the baseline; it was evaluated after the final test as a validation-only experiment. It projects each 33-dimensional frame to 64 dimensions, prepends a learned classification token, and adds sinusoidal positions. Its two pre-normalized encoder layers each use four attention heads, a 128-dimensional GELU feed-forward block, and dropout 0.25; a normalized classification-token embedding produces the logit. It has 69,505 parameters.
 
 Both networks use AdamW, batches of 512, gradient clipping at 1.0, and weighted binary cross entropy with a training-only positive weight of 20.83. The LSTM uses learning rate $10^{-3}$, weight decay $10^{-4}$, at most 25 epochs, and early-stopping patience 5; the Transformer uses $5\times10^{-4}$, $10^{-3}$, at most 30 epochs, and patience 7. Checkpoints, early stopping, and probability thresholds are selected by validation F1. Sigmoid is applied only for metrics.
 
-The learned baseline is class-balanced logistic regression ($C=1$). For every temporal input feature it receives the mean, standard deviation, first value, and last value. The selected orientation model therefore has 48 inputs plus an intercept. A majority-class predictor is also reported as a sanity check.
+\textbf{Baseline.} The baseline is class-balanced logistic regression ($C=1$). For every temporal input feature it receives the mean, standard deviation, first value, and last value. The selected orientation model therefore has 48 inputs plus an intercept. A majority-class predictor is also reported as a sanity check.
 
 \section*{Quantitative Results}
 
@@ -151,7 +165,7 @@ After this frozen test evaluation, seeds 361 and 362 and the Transformer compari
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=0.86\linewidth]{figures/lstm_learning_curves.png}
+  \includegraphics[width=0.72\linewidth]{figures/lstm_learning_curves.png}
   \caption{Selected LSTM training. Training loss falls while validation loss rises, showing rapid overfitting. The checkpoint is selected by validation F1, not final-epoch loss.}
   \label{fig:curves}
 \end{figure}
