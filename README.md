@@ -1,12 +1,12 @@
 # Will They Talk to the Robot?
 
-**Early prediction of human engagement intent for social robots, from 2 seconds of body motion.**
+Predicting whether a passerby is about to interact with a social robot, using two seconds of their body motion.
 
 <p align="center">
   <img src="assets/hero.png" alt="A social robot observing an approaching pedestrian" width="560">
 </p>
 
-A robot in a public lobby sees people walk past it all day. A few of them are about to stop and interact. If the robot can recognize those people a few seconds early, it can greet them proactively and leave everyone else alone. This repository is an end-to-end PyTorch pipeline that frames the problem as **sequence classification on real-world skeleton-tracking data**. It covers the data audit, leakage-safe preprocessing, baselines, LSTM and Transformer models, ablations, and a single frozen held-out evaluation.
+A robot in a public lobby sees people walk past it all day. A few of them are about to stop and interact. If the robot can recognize those people a few seconds early, it can greet them proactively and leave everyone else alone. This repo treats that as a sequence classification problem on real skeleton-tracking data and works through it end to end in PyTorch: auditing the dataset, building windows without leaking between splits, training baselines, an LSTM, and a Transformer, running ablations, and finally scoring the chosen models once on held-out data.
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.5-ee4c2c)
@@ -16,13 +16,15 @@ A robot in a public lobby sees people walk past it all day. A few of them are ab
 
 ---
 
-## Highlights
+## TL;DR
 
-- **Real, messy data.** 139k frames of 5 Hz Kinect tracking from the public [PAR-D Shutter dataset](https://doi.org/10.60600/YU/KFFQPF): 2,429 people across 13 days and two lobbies, with only **5% positive windows**.
-- **Leakage-safe by design.** Whole recording *days* are assigned to train/validation/test *before* overlapping windows are built. Label-construction columns are explicitly blocked, and normalization is fit on training data only.
-- **Honest evaluation.** Checkpoints and thresholds were selected on validation F1. The test split was read **exactly once**, after every choice was frozen.
-- **A negative result, reported properly.** The best LSTM beat logistic regression on validation (F1 0.345 vs 0.284). On unseen days it collapsed to 0.102, while the simple model held at 0.260. Multi-seed runs showed the LSTM's validation win was a lucky seed.
-- **Fully reproducible.** Each run gets a unique directory with its config, git revision, seed, device, package versions, checkpoint, and predictions. Every figure below is regenerated from those artifacts by one command.
+I used the public [PAR-D Shutter dataset](https://doi.org/10.60600/YU/KFFQPF), which has about 139k frames of 5 Hz Kinect tracking covering 2,429 people over 13 days in two university lobbies. Only around 5% of the two-second windows end shortly before someone starts interacting, so the classes are very imbalanced.
+
+I split the data by recording day before building any windows, so nothing from a test day leaks into training. Every modeling choice (features, window length, checkpoints, thresholds) was made on validation data, and the test days were scored once at the very end.
+
+The LSTM looked best on validation (F1 0.345 against 0.284 for logistic regression), but on the unseen test days it dropped to 0.102 while logistic regression held up at 0.260. Rerunning the LSTM with a couple more seeds showed its validation score had mostly been a lucky seed. In short, a simple model on summary features generalized better than the deep models, and most of the predictive signal only shows up in the last second before someone engages.
+
+Every run saves its config, git revision, seed, and predictions, and all the figures below can be regenerated from those saved runs with one command.
 
 ## How it works
 
@@ -40,11 +42,11 @@ flowchart LR
 
 | | |
 |---|---|
-| **Input** | `[batch, 10 frames, F]`: 2 s at 5 Hz, robot-relative features |
-| **Target** | 1 if the person begins interacting within 4 s after the window ends |
-| **Feature sets** | *Motion* (6): distance, speed, velocity, bearing. *Orientation* (12): + head/body heading. *Centered pose* (33): + pelvis-centered head, shoulder, wrist, ankle joints |
-| **Loss** | `BCEWithLogitsLoss` with a training-split positive weight (~20.8) |
-| **Selection** | Validation positive-class F1 for checkpoints, thresholds, features, and window length |
+| Input | `[batch, 10 frames, F]`: 2 s at 5 Hz, robot-relative features |
+| Target | 1 if the person starts interacting within 4 s after the window ends |
+| Feature sets | Motion (6): distance, speed, velocity, bearing. Orientation (12): motion plus head and body heading. Centered pose (33): orientation plus pelvis-centered head, shoulder, wrist, and ankle joints |
+| Loss | `BCEWithLogitsLoss` with a positive-class weight from the training split (~20.8) |
+| Selection | Validation positive-class F1, used for checkpoints, thresholds, features, and window length |
 
 ## Results
 
@@ -52,10 +54,10 @@ flowchart LR
 
 5,587 windows from two dates never used for fitting or selection (479 positives, 8.6%).
 
-| Selected model | Threshold | Accuracy | Precision | Recall | **F1** | Avg. precision |
+| Selected model | Threshold | Accuracy | Precision | Recall | F1 | Avg. precision |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Always predict "no" | — | 0.914 | 0.000 | 0.000 | 0.000 | — |
-| **Orientation logistic regression** | 0.80 | 0.861 | 0.239 | 0.284 | **0.260** | **0.197** |
+| Orientation logistic regression | 0.80 | 0.861 | 0.239 | 0.284 | 0.260 | 0.197 |
 | Centered-pose LSTM | 0.83 | 0.862 | 0.115 | 0.092 | 0.102 | 0.119 |
 
 <p align="center">
@@ -63,7 +65,7 @@ flowchart LR
   <img src="assets/figures/confusion_matrices.png" width="52%">
 </p>
 
-Accuracy is misleading here because a model that always says "no" scores 91.4%. Positive-class F1 and the precision-recall curve are the metrics that matter. The simple model dominates the LSTM across the whole PR curve, not only at the chosen threshold.
+Accuracy isn't very useful here, since a model that always says "no" already gets 91.4%. Positive-class F1 and the precision-recall curve tell you more. Logistic regression beats the LSTM along almost the whole PR curve, so the gap isn't just an artifact of where the thresholds landed.
 
 ### Validation experiments
 
@@ -72,15 +74,15 @@ Accuracy is misleading here because a model that always says "no" scores 91.4%. 
   <img src="assets/figures/seed_stability.png" width="49%">
 </p>
 
-- **Features.** Adding pelvis-centered pose helped the LSTM (+0.056 F1) but *hurt* logistic regression, so the gain was not simply from more inputs.
-- **Seeds.** Across seeds 360–362 the pose LSTM averaged **0.273 ± 0.063**, and the Transformer (69.5k params) averaged **0.274 ± 0.016**. The Transformer is about 4× more stable, but neither beats the 49-coefficient logistic baseline (0.284).
-- **History length.** 1 s / 2 s / 3 s windows gave 0.274 / **0.345** / 0.284. Longer context also shrinks the pool of eligible pre-engagement windows.
+- Features: adding pelvis-centered pose helped the LSTM (+0.056 F1) but hurt logistic regression, so the gain wasn't just from having more inputs.
+- Seeds: across seeds 360–362 the pose LSTM averaged 0.273 ± 0.063 and the Transformer (69.5k params) averaged 0.274 ± 0.016. The Transformer was about 4× more stable, but neither beat the 49-coefficient logistic baseline (0.284).
+- Window length: 1 s, 2 s, and 3 s windows gave 0.274, 0.345, and 0.284. Longer windows also leave fewer eligible windows before each engagement.
 
 <p align="center">
   <img src="assets/figures/lstm_learning_curves.png" width="62%">
 </p>
 
-The LSTM memorizes training days within a few epochs: training loss falls while validation loss climbs. Combined with seed variance and the test collapse, this points to **overfitting plus day-to-day distribution shift**.
+The LSTM starts memorizing the training days within a few epochs, with training loss falling while validation loss climbs. Together with the seed variance and the drop on test, this looks like overfitting combined with shift between recording days.
 
 ### How early can intent be predicted?
 
@@ -88,16 +90,16 @@ The LSTM memorizes training days within a few epochs: training loss falls while 
   <img src="assets/figures/lead_time_recall.png" width="62%">
 </p>
 
-Joining each test positive with the dataset's time-to-engagement shows a steep drop. The logistic model catches **51%** of people whose window ends within one second of engagement, but only **14–17%** two to four seconds out. With motion and orientation features, most of the signal shows up in the final second. *(Post-hoc description of frozen predictions; nothing here was used for model selection.)*
+Matching each test positive to the dataset's time-to-engagement column shows recall falling off quickly. The logistic model catches 51% of people whose window ends within a second of engaging, but only 14–17% when they're two to four seconds away. With motion and orientation features, most of the signal arrives in that last second. This is a post-hoc look at the frozen test predictions, and none of it fed back into model selection.
 
-Full tables, subgroup results, qualitative examples, and run IDs are in **[docs/RESULTS.md](docs/RESULTS.md)**.
+Full tables, subgroup results, qualitative examples, and run IDs are in [docs/RESULTS.md](docs/RESULTS.md).
 
 ## Takeaways
 
-1. **Start with a strong simple baseline.** A logistic model on four summary statistics per feature was the most robust model.
-2. **One seed is an anecdote.** The headline LSTM result disappeared under two more seeds.
-3. **Split by the unit you will deploy on.** Splitting by recording day exposed a generalization gap that frame- or scenario-level splits would hide.
-4. **Freeze before you test.** Because the test set was read once, the negative result is trustworthy rather than tuned away.
+1. A strong simple baseline is worth having. Logistic regression on four summary statistics per feature ended up being the most robust model.
+2. One seed isn't enough. The LSTM's best validation result mostly went away after two more seeds.
+3. Split the way you'd deploy. Splitting by recording day exposed a generalization gap that frame- or scenario-level splits would have hidden.
+4. Lock everything in before touching the test set. Since the test days were only scored once, the LSTM's poor test result is an honest one and wasn't tuned away.
 
 ## Quickstart
 
@@ -155,16 +157,16 @@ Raw data, processed windows, checkpoints, and run directories are git-ignored. O
 
 ## Documentation
 
-- **[Technical report](report/main.tex)**: a 6-page write-up with related work, method, results, and discussion. Build instructions are in [report/README.md](report/README.md).
-- **[Data audit](docs/DATA.md)**: what PAR-D actually contains, verified label semantics, and why each column is used or banned.
-- **[Results](docs/RESULTS.md)**: every reported number traced to a run directory.
-- **[Model card](docs/MODEL_CARD.md)**: intended use, out-of-scope uses, and known failure modes.
+- [Technical report](report/main.tex): a 6-page write-up covering related work, method, results, and discussion. Build instructions are in [report/README.md](report/README.md).
+- [Data audit](docs/DATA.md): what PAR-D actually contains, how the labels work, and why each column is used or excluded.
+- [Results](docs/RESULTS.md): every reported number, with the run directory it came from.
+- [Model card](docs/MODEL_CARD.md): intended use, out-of-scope uses, and known failure modes.
 
 ## Limitations and responsible use
 
-- The test set holds unseen *days* from the same two lobbies, not a new building. Cross-site generalization is untested.
-- "Future interaction" is a behavioral proxy for intent, and similar approach-and-stop motion can receive opposite labels.
-- The intended use is low-stakes and reversible: greet, wait, or don't interrupt. It is **not** meant for surveillance, access control, or any consequential decision. The dataset contains numeric skeleton tracks only, with no images of people.
+- The test set is unseen days from the same two lobbies, not a new building, so how well this transfers to a new site is untested.
+- "Starts interacting within 4 s" is a behavioral stand-in for intent, and very similar approach-and-stop motion can end up with opposite labels.
+- The intended use is low-stakes and reversible: greet, wait, or don't interrupt. It is not meant for surveillance, access control, or any consequential decision. The dataset contains numeric skeleton tracks only, with no images of people.
 
 ## Citation and acknowledgments
 

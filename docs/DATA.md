@@ -1,6 +1,6 @@
 # Data Audit: PAR-D Shutter Interaction Dataset
 
-Audit date: 2026-08-06. This document records what the release actually contains, verified by inspecting it rather than assumed from the paper.
+Audit date: 2026-08-06. This is what the release actually contains, based on inspecting the files directly rather than going off the paper.
 
 ## Source and integrity
 
@@ -40,11 +40,11 @@ The following released columns are explicitly prohibited as model inputs because
 
 ## Feature sets
 
-Inspection confirmed that all three candidate modalities are present in the release:
+All three candidate feature groups turned out to be available in the release:
 
-- **Motion/proxemics:** distance from cart to pelvis, pedestrian velocity, planar velocity, and relative bearing.
-- **Orientation:** motion features plus relative head direction and head/pelvis orientation encodings.
-- **Pose:** orientation features plus selected head, shoulder, wrist, and ankle coordinates centered on the pedestrian pelvis.
+- Motion/proxemics: distance from cart to pelvis, pedestrian velocity, planar velocity, and relative bearing.
+- Orientation: motion features plus relative head direction and head/pelvis orientation encodings.
+- Pose: orientation features plus selected head, shoulder, wrist, and ankle coordinates centered on the pedestrian pelvis.
 
 Centered pose features are used instead of raw global joint positions because the two lobbies have different coordinate frames.
 

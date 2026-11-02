@@ -16,7 +16,7 @@ All entries below use a two-second observation window and the same recording-day
 | Logistic regression | Centered pose | 133 coefficients | 0.156 | 0.419 | 0.227 |
 | LSTM | Motion | 51,777 | 0.333 | 0.256 | 0.289 |
 | LSTM | Orientation | 53,313 | 0.214 | 0.445 | 0.289 |
-| **LSTM** | **Centered pose** | **58,689** | **0.311** | **0.387** | **0.345** |
+| LSTM | Centered pose | 58,689 | 0.311 | 0.387 | 0.345 |
 
 The richer pose representation improved validation F1 only for the nonlinear sequence model. It hurt logistic regression, suggesting that the benefit was not simply caused by adding more coordinates.
 
@@ -26,7 +26,7 @@ After the original model comparison, the selected pose LSTM and a positional pos
 
 | Model | Parameters | Accuracy | Precision | Recall | F1 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Orientation logistic regression | 49 coefficients | 0.917 | 0.232 | 0.366 | **0.284** |
+| Orientation logistic regression | 49 coefficients | 0.917 | 0.232 | 0.366 | 0.284 |
 | Pose LSTM | 58,689 | 0.912 +/- 0.028 | 0.229 +/- 0.072 | 0.359 +/- 0.096 | 0.273 +/- 0.063 |
 | Pose Transformer | 69,505 | 0.909 +/- 0.020 | 0.220 +/- 0.034 | 0.375 +/- 0.051 | 0.274 +/- 0.016 |
 
@@ -43,7 +43,7 @@ The selected centered-pose LSTM was compared at the planned early-observation le
 | Observation | Frames at 5 Hz | Validation samples | Precision | Recall | F1 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 1 second | 5 | 8,808 | 0.212 | 0.388 | 0.274 |
-| **2 seconds** | **10** | **7,618** | **0.311** | **0.387** | **0.345** |
+| 2 seconds | 10 | 7,618 | 0.311 | 0.387 | 0.345 |
 | 3 seconds | 15 | 6,619 | 0.239 | 0.350 | 0.284 |
 
 Two seconds was selected. Longer observation did not monotonically improve performance, partly because longer windows reduce the number of eligible pre-engagement examples.
@@ -54,7 +54,7 @@ The test set consists entirely of 2022-08-08 (Lobby 1) and 2022-08-23 (Lobby 2):
 
 | Selected model | Threshold | Accuracy | Precision | Recall | F1 | Log loss |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Orientation logistic regression | 0.80 | 0.861 | 0.239 | 0.284 | **0.260** | 0.694 |
+| Orientation logistic regression | 0.80 | 0.861 | 0.239 | 0.284 | 0.260 | 0.694 |
 | Centered-pose LSTM | 0.83 | 0.862 | 0.115 | 0.092 | 0.102 | 0.597 |
 
 Confusion matrices use `[[TN, FP], [FN, TP]]` ordering:
@@ -73,11 +73,11 @@ Subgroup F1 further illustrates the shift:
 
 ## Post-hoc analysis of the frozen test predictions
 
-These analyses only *describe* the already frozen test predictions. They were produced after the project was complete, and they did not change any model, feature set, window length, checkpoint, or threshold.
+These analyses only describe the already frozen test predictions. They were produced after the project was complete, and they did not change any model, feature set, window length, checkpoint, or threshold.
 
-**Threshold-free ranking.** The test average precision (area under the precision-recall curve) is 0.197 for orientation logistic regression and 0.119 for the pose LSTM. Chance level equals the test prevalence of 0.086. The logistic model has higher precision across nearly the entire recall range, so its advantage does not depend on the chosen thresholds.
+Threshold-free ranking: the test average precision (area under the precision-recall curve) is 0.197 for orientation logistic regression and 0.119 for the pose LSTM. Chance level equals the test prevalence of 0.086. The logistic model has higher precision across nearly the entire recall range, so its advantage does not depend on the chosen thresholds.
 
-**Recall by lead time.** Each positive test window was joined with the released `feng_time` (time until engagement) at its final frame. All 479 positives matched.
+Recall by lead time: each positive test window was joined with the released `feng_time` (time until engagement) at its final frame. All 479 positives matched.
 
 | Time until engagement | Positive windows | Logistic recall | LSTM recall |
 | --- | ---: | ---: | ---: |

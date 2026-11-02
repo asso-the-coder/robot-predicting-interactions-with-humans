@@ -6,7 +6,7 @@
 
 1. Install MiKTeX and enable automatic installation of missing packages.
 2. In MiKTeX Console, check for and apply package updates.
-3. Install the **LaTeX Workshop** extension by James Yu in VS Code.
+3. Install the LaTeX Workshop extension by James Yu in VS Code.
 4. Restart VS Code so the TeX executables are added to its PATH.
 
 Verify the installation in a new PowerShell terminal:
