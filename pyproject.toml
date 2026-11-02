@@ -7,6 +7,7 @@ name = "engagement-intent"
 version = "1.0.0"
 description = "Early prediction of pedestrian engagement intent for social robots."
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.8,<4",

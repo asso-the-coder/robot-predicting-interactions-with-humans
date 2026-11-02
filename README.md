@@ -12,6 +12,7 @@ A robot in a public lobby sees people walk past it all day. A few of them are ab
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.5-ee4c2c)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4%2B-f7931e)
 ![Tests](https://img.shields.io/badge/tests-26%20passing-brightgreen)
+![License: MIT](https://img.shields.io/badge/license-MIT-yellow)
 
 ---
 
@@ -169,4 +170,8 @@ Raw data, processed windows, checkpoints, and run directories are git-ignored. O
 
 Data: the PAR-D Shutter Interaction Dataset (CC0 1.0), Yale Dataverse, [doi:10.60600/YU/KFFQPF](https://doi.org/10.60600/YU/KFFQPF). Please cite the dataset authors if you use it; see [`report/references.bib`](report/references.bib).
 
-Development was assisted by AI coding tools. All design decisions, experiments, and interpretation are documented in this repository.
+Development was assisted by AI coding tools.
+
+## License
+
+Code is released under the [MIT License](LICENSE). The PAR-D dataset is distributed separately by its authors under CC0 1.0 and is not included in this repository. All design decisions, experiments, and interpretation are documented in this repository.
