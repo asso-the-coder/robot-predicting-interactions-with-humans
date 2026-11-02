@@ -1,6 +1,6 @@
-# Final report
+# Technical report
 
-The main text must fit within four pages; references may continue afterward. The report uses the supplied APS360 LaTeX style.
+`main.tex` is a short technical report on the project: motivation, related work, data processing, models, results, post-hoc analysis, and ethics. It uses `report.sty`, a NeurIPS-derived layout. Figures are pulled from [`../assets/`](../assets) so the report and README always show the same plots.
 
 ## Editor setup on Windows
 
@@ -25,4 +25,4 @@ pdflatex -interaction=nonstopmode -halt-on-error main.tex
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 ```
 
-The final two passes resolve citations, page numbers, and cross-references. Inspect `main.log` for undefined references, overfull boxes, and other warnings, then confirm that references begin after no more than four pages of main text.
+The final two passes resolve citations, page numbers, and cross-references. Inspect `main.log` for undefined references and overfull boxes. Build products (including `main.pdf`) are git-ignored. On Linux/macOS, any TeX Live installation works with the same commands.

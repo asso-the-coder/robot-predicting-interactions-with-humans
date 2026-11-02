@@ -2,7 +2,7 @@
 
 \PassOptionsToPackage{numbers,sort&compress}{natbib}
 
-\usepackage{APS360}
+\usepackage{report}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -15,6 +15,7 @@
 \usepackage{tabularx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
+\graphicspath{{figures/}{../assets/}{../assets/figures/}}
 
 \hypersetup{
   colorlinks=true,
@@ -32,12 +33,10 @@
 \definecolor{outputorange}{HTML}{FCE2C4}
 
 \title{Early Prediction of Human Engagement Intent for Social Robot Interaction\\[0.35em]
-  \large\mdseries APS360 Final Report}
+  \large\mdseries Technical Report}
 
 \author{%
   Asser Abdelgawad \\
-  1008107567 \\
-  \texttt{asser.abdelgawad@mail.utoronto.ca} \\
   \href{https://github.com/asso-the-coder/robot-predicting-interactions-with-humans}{Source Code}%
 }
 
@@ -49,16 +48,16 @@
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=0.62\linewidth,trim=0 145 0 145,clip]{figures/Intention_Classification.png}
+  \includegraphics[width=0.62\linewidth,trim=0 145 0 145,clip]{hero.png}
   \caption{Can a robot determine if this is a non-engaging passerby or a would-be interlocutor?}
   \label{fig:intention}
 \end{figure}
 
 \section*{Introduction}
 
-My motivation for this project arose from my current \href{https://drive.google.com/file/d/1Sqb0hDDnlDuVB5g78kB9woW4czeqSbG5/view?usp=sharing}{summer research on humanoid robotics}. Although my work there focuses on audio models and conversation in a controlled setting, I realized that interaction would feel much more natural if a robot could first recognize whether a nearby person intends to engage and then initiate the conversation itself. This is difficult in public spaces: people approach, pause, look around, or pass by in varied ways within a noisy, comparatively chaotic physical world. I therefore chose machine learning over classical rule-based methods because hand-set thresholds for distance, speed, or orientation are unlikely to generalize across unfamiliar people and environments. This project treats early engagement prediction as supervised binary classification: given a short robot-centric sequence observed before engagement begins, the model predicts whether that person will interact within the next four seconds. Machine learning can instead infer intent from temporal combinations of distance, speed, direction, body orientation, and pose. A reliable prediction could help a public-facing robot greet an interested person promptly while avoiding unwanted interruptions. The practical scope is deliberately low-risk and excludes surveillance or consequential decisions.
+This project grew out of my \href{https://drive.google.com/file/d/1Sqb0hDDnlDuVB5g78kB9woW4czeqSbG5/view?usp=sharing}{research on humanoid robotics}. Although that work focuses on audio models and conversation in a controlled setting, I realized that interaction would feel much more natural if a robot could first recognize whether a nearby person intends to engage and then initiate the conversation itself. This is difficult in public spaces: people approach, pause, look around, or pass by in varied ways within a noisy, comparatively chaotic physical world. I therefore chose machine learning over classical rule-based methods because hand-set thresholds for distance, speed, or orientation are unlikely to generalize across unfamiliar people and environments. This project treats early engagement prediction as supervised binary classification: given a short robot-centric sequence observed before engagement begins, the model predicts whether that person will interact within the next four seconds. Machine learning can instead infer intent from temporal combinations of distance, speed, direction, body orientation, and pose. A reliable prediction could help a public-facing robot greet an interested person promptly while avoiding unwanted interruptions. The practical scope is deliberately low-risk and excludes surveillance or consequential decisions.
 
-\section*{Illustration}
+\section*{System Overview}
 
 \begin{figure}[!ht]
   \centering
@@ -130,15 +129,23 @@ Three nested feature sets support an ablation: motion (6 features), orientation 
 
 \textbf{Main architecture.} The main architecture is a two-layer LSTM with 64 hidden units per layer and dropout 0.2. The last-layer hidden state passes through dropout and a linear head to produce one raw logit. It has 58,689 trainable parameters for pose input.
 
-A Transformer was also designed as an extra (explorative) step and was evaluated after the final test as a validation-only experiment. It projects each 33-dimensional frame to 64 dimensions, prepends a learned classification token, and adds sinusoidal positions. Its two pre-normalized encoder layers each use four attention heads, a 128-dimensional GELU feed-forward block \citep{hendrycks2016gelu}, and dropout 0.25; a normalized classification-token embedding produces the logit. It has 69,505 parameters.
+A Transformer was added afterwards as an exploratory comparison; because it was built after the test split had been read, it is evaluated on validation data only. It projects each 33-dimensional frame to 64 dimensions, prepends a learned classification token, and adds sinusoidal positions. Its two pre-normalized encoder layers each use four attention heads, a 128-dimensional GELU feed-forward block \citep{hendrycks2016gelu}, and dropout 0.25; a normalized classification-token embedding produces the logit. It has 69,505 parameters.
 
 Both networks use AdamW, batches of 512, gradient clipping at 1.0, and weighted binary cross entropy with a training-only positive weight of 20.83. The LSTM uses learning rate $10^{-3}$, weight decay $10^{-4}$, at most 25 epochs, and early-stopping patience 5; the Transformer uses $5\times10^{-4}$, $10^{-3}$, at most 30 epochs, and patience 7. Checkpoints, early stopping, and probability thresholds are selected by validation F1. Sigmoid is applied only for metrics.
 
-\textbf{Baseline.} The baseline is class-balanced logistic regression ($C=1$). For every temporal input feature it receives the mean, standard deviation, first value, and last value. The selected orientation model therefore has 48 inputs plus an intercept. A majority-class predictor is also reported as a sanity check.
+\textbf{Baseline.} The baseline is class-balanced logistic regression ($C=1$). For every temporal input feature it receives the final value, mean, standard deviation, and net change across the window. The selected orientation model therefore has 48 inputs plus an intercept. A majority-class predictor is also reported as a sanity check.
 
 \section*{Quantitative Results}
 
 At seed 360, the pose LSTM gave the best validation F1, 0.345, compared with 0.284 for orientation logistic regression. Motion, orientation, and pose LSTM F1 scores were 0.289, 0.289, and 0.345. Pose-window F1 was 0.274, 0.345, and 0.284 for one, two, and three seconds, so two seconds was selected. Longer context also reduced the number of eligible windows.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=0.49\linewidth]{feature_ablation.png}\hfill
+  \includegraphics[width=0.49\linewidth]{seed_stability.png}
+  \caption{Validation F1. Left: richer pose input helps the LSTM but hurts logistic regression. Right: across three seeds the LSTM's best result is an outlier; the Transformer is far more stable but neither beats the logistic baseline on average.}
+  \label{fig:validation}
+\end{figure}
 
 The model, features, two-second window, checkpoint, and threshold were frozen before reading the test dates. Table~\ref{tab:test} shows that the LSTM validation advantage did not transfer. Accuracy is included but is not the main measure: always predicting negative obtains 91.4\% test accuracy and zero positive-class F1.
 
@@ -166,11 +173,21 @@ After this frozen test evaluation, seeds 361 and 362 and the Transformer compari
   \label{fig:curves}
 \end{figure}
 
-\section*{Qualitative Results and Evaluation on New Data}
+\section*{Generalization to Unseen Recording Days}
 
-For the new-data evaluation, the 5,587 test windows come from two recording dates that were excluded from preprocessing statistics, feature and window selection, checkpoints, thresholds, and hyperparameters. They are new temporal samples from the dataset's two existing locations, not independently collected cross-site data. This tests date shift within known locations, so no cross-site generalization is claimed. Test confusion matrices are $[[4675,433],[343,136]]$ for logistic regression and $[[4771,337],[435,44]]$ for the LSTM, ordered as $[[TN,FP],[FN,TP]]$.
+The 5,587 test windows come from two recording dates that were excluded from preprocessing statistics, feature and window selection, checkpoints, thresholds, and hyperparameters. They are new temporal samples from the dataset's two existing locations, not independently collected cross-site data. This tests date shift within known locations, so no cross-site generalization is claimed. Test confusion matrices are $[[4675,433],[343,136]]$ for logistic regression and $[[4771,337],[435,44]]$ for the LSTM, ordered as $[[TN,FP],[FN,TP]]$.
 
-Four LSTM outputs were selected deterministically, one per confusion-matrix category (Table~\ref{tab:examples}). The matched approach-and-stop true and false positives show why proximity or stopping alone is insufficient, while the nearly stationary positive and negative show that some labels are ambiguous from two seconds of behavior.
+\textbf{Post-hoc analysis of the frozen predictions.} The analyses below describe the already frozen test predictions and were not used to select or alter any model or threshold. Threshold-free average precision is 0.197 for logistic regression and 0.119 for the LSTM against a chance level of 0.086 (Figure~\ref{fig:posthoc}, left), so the ranking does not depend on the chosen thresholds. Joining each positive window with the released time-to-engagement shows that recall falls as the prediction becomes earlier: logistic regression recalls 51\% of windows ending within one second of engagement but only 14--17\% of those ending two to four seconds before it (Figure~\ref{fig:posthoc}, right).
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=0.45\linewidth]{precision_recall.png}\hfill
+  \includegraphics[width=0.53\linewidth]{lead_time_recall.png}
+  \caption{Held-out test analysis of the frozen models. Left: precision--recall curves; dots mark the validation-selected operating points. Right: recall of positive windows by how long before engagement the observation ended.}
+  \label{fig:posthoc}
+\end{figure}
+
+\textbf{Qualitative examples.} Four LSTM outputs were selected deterministically, one per confusion-matrix category (Table~\ref{tab:examples}). The matched approach-and-stop true and false positives show why proximity or stopping alone is insufficient, while the nearly stationary positive and negative show that some labels are ambiguous from two seconds of behavior.
 
 \begin{table}[!ht]
   \centering
@@ -193,7 +210,7 @@ Four LSTM outputs were selected deterministically, one per confusion-matrix cate
 
 The main result is a failure to generalize, not a neural-model improvement. The best-seed LSTM appeared to gain 0.060 validation F1 over logistic regression, but two additional seeds reduced the LSTM mean to 0.273. On unseen dates its recall fell to 9.2\%, while the simpler baseline retained 28.4\% recall. The rising validation loss in Figure~\ref{fig:curves}, high variance across seeds, and lobby/date subgroup differences point to overfitting and temporal distribution shift.
 
-This task is difficult for three reasons. First, positives form only 5\% of windows. Second, the target is future engagement behavior, an imperfect proxy for internal intent. Similar approach-and-stop motion can receive opposite labels. Third, overlapping windows create many samples but fewer independent behaviors. Rich pose improved one LSTM seed but hurt logistic regression, so additional coordinates are not automatically informative. Future work should add independent locations and more positive tracks, evaluate at the track level, calibrate probabilities across dates, and test whether longer histories help once they do not reduce the dataset so sharply.
+This task is difficult for three reasons. First, positives form only 5\% of windows. Second, the target is future engagement behavior, an imperfect proxy for internal intent. Similar approach-and-stop motion can receive opposite labels. Third, overlapping windows create many samples but fewer independent behaviors. Rich pose improved one LSTM seed but hurt logistic regression, so additional coordinates are not automatically informative. The lead-time analysis also shows that most of the usable signal arrives in the final second before engagement, so a four-second horizon is ambitious for these features. Future work should add independent locations and more positive tracks, evaluate at the track level, calibrate probabilities across dates, and test whether longer histories help once they do not reduce the dataset so sharply.
 
 \section*{Conclusion}
 
@@ -207,7 +224,7 @@ Public-space observation, even if audioless, creates privacy and consent concern
 \bibliographystyle{plainnat}
 \bibliography{references}
 
-\section*{Disclaimer}
-This project was augmented using Codex.
+\section*{Acknowledgments}
+Data: PAR-D Shutter Interaction Dataset (CC0) \citep{thompson2024pard}. Development was assisted by AI coding tools.
 
 \end{document}

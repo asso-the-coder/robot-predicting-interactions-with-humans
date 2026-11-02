@@ -19,7 +19,7 @@
 % last revision: April 2025
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{APS360}[2025/05/01 APS360 project report style file]
+\ProvidesPackage{report}[2025/05/01 NeurIPS-derived technical report style]
 
 % declare final option, which creates camera-ready copy
 \newif\if@neuripsfinal\@neuripsfinalfalse
@@ -88,9 +88,9 @@
 
 \ProcessOptions\relax
 
-% The distributed course template uses the final option without selecting a
-% NeurIPS track. Supply a course-specific footer so the final build is valid.
-\providecommand{\@trackname}{APS360 Project Final Report.}
+% This report uses the final option without selecting a
+% NeurIPS track. Supply a neutral footer so the final build is valid.
+\providecommand{\@trackname}{Technical report.}
 
 % fonts
 \renewcommand{\rmdefault}{ptm}

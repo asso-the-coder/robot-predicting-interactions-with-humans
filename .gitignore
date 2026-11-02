@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Local course/project reference docs
+# Local, non-public reference material (tracked docs are Markdown)
 docs/*.pdf
 docs/project_brief.md
 docs/*.tex
